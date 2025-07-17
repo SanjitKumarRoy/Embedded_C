@@ -5,7 +5,7 @@ MCU = atmega328p
 F_CPU = 16000000UL
 
 # Source and output names
-SRC = main.c
+SRC = main.c src/blinking_led.c
 TARGET = program
 
 # Compiler and flags
@@ -15,13 +15,14 @@ CFLAGS = -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os
 
 # Upload tool and port (update as needed)
 PROGRAMMER = arduino
-PORT = /dev/ttyUSB0
+#PORT = /dev/ttyUSB0
+PORT = /dev/ttyACM0
 BAUD = 115200
 
 all: $(TARGET).hex
 
 $(TARGET).elf: $(SRC)
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $^
 
 $(TARGET).hex: $(TARGET).elf
 	$(OBJCOPY) -O ihex $< $@
