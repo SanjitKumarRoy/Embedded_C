@@ -5,7 +5,7 @@ MCU = atmega328p
 F_CPU = 16000000UL
 
 # Source and output names
-SRC = main.c src/blinking_led_interrupt.c
+SRC = main.c src/blinking_led_interrupt_timer.c
 #SRC = blinking_led.c
 TARGET = program
 
