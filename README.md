@@ -4,7 +4,8 @@
 - [Part I: Simulate ATmega328P Code on Ubuntu](#part-i-simulate-atmega328p-code-on-ubuntu-using-simavr)
 - [Part II: Flash to ATmega328P (Arduino Uno)](#part-ii-flash-to-atmega328p-arduino-uno)
 - [Notes](#notes)
-
+- [Part III: Interrupts cheat sheet](#part-iii-avr-interrupts-cheat-sheet)
+- [Timer Overflow Calculation for 500ms Using Timer1](#timer-overflow-calculation-for-500ms-using-timer1)
 ---
 
 ## Part I: Simulate ATmega328P Code on Ubuntu (Using `simavr`)
@@ -273,3 +274,145 @@ make flash # Flash to Arduino
 Note: Update the PORT in the `Makefile` if necessary (e.g., `/dev/ttyUSB0`, `/dev/ttyACM0`, etc.)
 
 
+
+## Part III: AVR Interrupts Cheat Sheet
+### 1. Enable Specific Interrupt
+Set the appropriate bit in a control register:
+- External: `EIMSK |= (1 << INT0);`
+- Timer: `TIMSK1 |= (1 << TOIE1);` // Timer1 overflow
+
+### 2. Configure Trigger Type
+For external interrupts (`INT0`, `INT1`):
+```c
+EICRA |= (1 << ISC01);  // Falling edge on INT0
+```
+|ISC01|ISC00|Trigger Type|
+|---|---|---|
+|0|0|Low Level|
+|0|1|Any change|
+|1|0|Falling edge|
+|1|1|Rising edge|
+---
+
+### 3. Enable Global Interrupts
+```c
+sei();   // Set Global Interrupt Enable bit
+cli();   // Clear (disable) if needed
+```
+
+### 4. Write ISR
+```c
+ISR(INT0_vect) {
+    // Your interrupt code
+}
+```
+- `ISR` names must match vector name (e.g., `INT0_vect`, `TIMER1_OVF_vect`).
+- Keep `ISR` short and fast.
+
+### 📘 Common Interrupt Vectors
+|Vector Name|Trigger Event|
+|---|---|
+|`INT0_vect`|External `INT0` (PD2)|
+|`INT1_vect`|External `INT1` (PD3)|
+|`TIMER0_OVF_vect`|`Timer0` overflow|
+|`TIMER1_OVF_vect`|`Timer1` overflow|
+|`TIMER2_COMPA_vect`|`Timer2` compare match A|
+|`ADC_vect`|ADC conversion complete|
+|`USART_RX_vect`|USART receive complete|
+---
+
+### 🔍 Important Registers
+|Register|Description|
+|---|---|
+|`EIMSK`|Enable `INT0`, `INT1`|
+|`EICRA`|Set edge type (ISC bits)|
+|`EIFR`|Flag bits for external interrupts|
+|`TIMSKx`|Enable Timer interrupts|
+|`TIFRx`|Flag bits for Timer interrupts|
+|`GICR/SREG`|Global interrupt control (`SREG` holds `I` bit)|
+---
+
+### 🔄 Timer Overflow Example (Timer1 - 16-bit)
+```c
+#define _500ms 57723;
+
+void init_port(){
+	DDRD |= (1 << PD3);		// Set PD3 (D3) as output
+}
+
+void timer1_init(){
+	TCCR1A = 0x00;							// Set Timer1 to normal mode
+	TCCR1B |= (1 << CS12) | (1 << CS10);	// Set prescaler to 1024
+	TIMSK1 |= (1 << TOIE1);					// Enable Timer1 overflow interrupt
+	TCNT1 = _500ms;							// Initialize counter; Overflow occur at every 500 ms
+	sei();									// Enable global interrupts
+}
+
+ISR(TIMER1_OVF_vect){
+	PORTD ^= (1 << PD3);  					// Toggle LED
+	TCNT1 = _500ms; 						// Reload for next 500 ms
+}
+
+void main(void) {
+	init_port();
+	timer1_init();
+	while (1) {
+		// Main loop does nothing, CPU is free
+	}
+}
+```
+### ⚠️ Best Practices
+- Use `volatile` keyword for variables shared between ISR and main code:
+```c
+volatile uint8_t flag = 0;
+```
+- Avoid `delay()` inside ISRs.
+- Avoid long loops or heavy computation inside ISRs.
+
+## Timer Overflow Calculation for 500ms Using Timer1
+**⚙️ Hardware Specifications Assumed:** <br>
+Microcontroller: **ATmega328P** <br>
+System Clock: **16 MHz** <br>
+Timer: **Timer1 (16-bit)** <br>
+Timer Mode: **Normal mode** <br>
+Goal: Overflow every **500 ms**
+
+---
+
+### 1. 🔍 Understand Timer Tick Time
+When you use a **prescaler**, each timer tick takes more time.
+- **Prescaler** = `1024`  
+- **CPU Frequency (F_CPU)** = `16,000,000 Hz`
+```text
+Tick Time = Prescaler / F_CPU = 1024 / 16,000,000 = 64 μs
+```
+
+### 2. 🧮 Calculate Ticks Needed for 500 ms
+```text
+500 ms = 500,000μs
+Ticks needed = 500,000/64 = 7812.5 ≈ 7813
+```
+
+### 3. 🧮 Preload TCNT1 to Reach Overflow at 7813 Ticks
+Since `Timer1` overflows at 65536 ticks, you must preload it to:
+```text
+65536 - 7813 = 57723
+```
+So, preload:
+```c
+TCNT1 = 57723;
+```
+This means the timer will count from 57723 to 65535, which is exactly 7813 ticks = **500 ms**.
+
+### 4. We can re-write it in another way:
+```text
+500 ms = {(2^16 - TCNT1) * 1024} / 16,000,000
+=> 0.5 = {(65536 - TCNT1) * 1024} / 16,000,000
+=> (0.5 * 16,000,000)/1024 = 65536 - TCNT1
+=> TCNT1 = 65536 - 7813 = 57723
+```
+
+
+
+[def]: #-timer-overflow-calculation-for-500ms-using-timer1
+[def2]: ##
