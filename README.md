@@ -1,72 +1,72 @@
 # Embedded C on ATmega328P (using AVR)
 
 ## Table of Contents
-- [1: Install AVR and Run Embedded C Program](#1-install-avr-and-run-embedded-c-program)
-- [1.1: Install AVR](#11-install-avr)
-- [1.2: Write an Embedded C Program and run it](#12-write-an-embedded-c-program-and-run-it)
+- [1 Install AVR and Run Embedded C Program](#1-install-avr-and-run-embedded-c-program)
+    - [1.1 Install AVR](#11-install-avr)
+    - [1.2 Write an Embedded C Program and run it](#12-write-an-embedded-c-program-and-run-it)
 <!--
-- [1.2.1: Embedded C Program `blink.c`](#121-embedded-c-program-blinkc)
-- [1.2.2: Compile `blink.c` to run on ATmega328P](#122-compile-blinkc-to-run-on-atmega328p)
-- [1.2.3: Run with `simavr` simulator](#123-run-with-simavr-simulator)
-- [1.2.4: Run on (Flash to) ATmega328P (Arduino Uno)](#124-run-on-flash-to-atmega328p-arduino-uno)
+        - [1.2.1 Embedded C Program `blink.c`](#121-embedded-c-program-blinkc)
+        - [1.2.2 Compile `blink.c` to run on ATmega328P](#122-compile-blinkc-to-run-on-atmega328p)
+        - [1.2.3 Run with `simavr` simulator](#123-run-with-simavr-simulator)
+        - [1.2.4 Run on (Flash to) ATmega328P (Arduino Uno)](#124-run-on-flash-to-atmega328p-arduino-uno)
 -->
-- [2: Create your own library](#2-create-your-own-library)
-- [2.1: Project Description: Blinking LED with Button - AVR (ATmega328P / Arduino Uno)](#21-project-description-blinking-led-with-button--avr-atmega328p--arduino-uno)
-- [2.2: Project Structure](#22-project-structure)
-- [2.3: Code:](#23-code)
+- [2 Create your own library](#2-create-your-own-library)
+    - [2.1 Project Description: Blinking LED with Button - AVR (ATmega328P / Arduino Uno)](#21-project-description-blinking-led-with-button--avr-atmega328p--arduino-uno)
+    - [2.2 Project Structure](#22-project-structure)
+    - [2.3 Code:](#23-code)
+        <!--
+        - [2.3.1 `main.c`](#231-mainc)
+        - [2.3.2 `./src/blinking_led.h`](#232-srcblinking_ledh)
+        - [2.3.3 `./src/blinking_led.c`](#233-srcblinking_ledc)
+        -->
+    - [2.4 `Makefile`](#24-makefile)
+        <!--
+        - [2.4.1 Command to compile and run using `make`](#241-command-to-compile-and-run-using-make)
+        -->
+- [3 AVR Interrupts Cheat Sheet](#3-avr-interrupts-cheat-sheet)
+    - [3.1 Enable Specific Interrupt](#31-enable-specific-interrupt)
+    - [3.2 Configure Trigger Type](#32-configure-trigger-type)
+    - [3.3 Enable Global Interrupts](#33-enable-global-interrupts)
+    - [3.4 Write ISR](#34-write-isr)
+    - [3.5 Common Interrupt Vectors](#35-common-interrupt-vectors)
+    - [3.6 Important Registers](#36-important-registers)
+    - [3.7 Timer Overflow](#37-timer-overflow)
+        <!--
+        - [3.7.1 Example (Timer1 - 16-bit)](#371-example-timer1---16-bit)
+        - [3.7.2 Best Practices](#372-best-practices)
+        -->
+    - [3.8 Timer Overflow Calculation for 500ms Using Timer1](#38-timer-overflow-calculation-for-500ms-using-timer1)
+        <!--
+        - [3.8.1 Understand Timer Tick Time](#381-understand-timer-tick-time)
+        - [3.8.2 Calculate Ticks Needed for 500 ms](#382-calculate-ticks-needed-for-500-ms)
+        - [3.8.3 Preload `TCNT1` to Reach Overflow at 7813 Ticks](#383-preload-tcnt1-to-reach-overflow-at-7813-ticks)
+        - [3.8.4 We can re-write it in another way](#384-we-can-re-write-it-in-another-way)
+        -->
+- [4 UART Communication Tutorial (AVR / ATmega328P)](#4-uart-communication-tutorial-avr--atmega328p)
+    - [4.1 What is UART?](#41-what-is-uart)
+    - [4.2 Registers Involved in UART (ATmega328P)](#42-registers-involved-in-uart-atmega328p)
+        <!--
+        - [4.2.1 `UBRR0H` and `UBRR0L` - Baud Rate Registers](#421-ubrr0h-and-ubrr0l---baud-rate-registers)
+        - [4.2.2 `UCSR0A` - Control and Status Register A](#422-ucsr0a---control-and-status-register-a)
+        - [4.2.3 `UCSR0B` - Control and Status Register B](#423-ucsr0b---control-and-status-register-b)
+        - [4.2.4 `UCSR0C` - Control and Status Register C](#424-ucsr0c---control-and-status-register-c)
+        - [4.2.5 UDR0 - UART Data Register](#425-udr0---uart-data-register)
+        -->
+    - [4.3 Full Example: Echo Program](#43-full-example-echo-program)
+    - [4.4 Test UART with PC using `screen`](#44-test-uart-with-pc-using-screen)
 <!--
-- [2.3.1: `main.c`](#231-mainc)
-- [2.3.2: `./src/blinking_led.h`](#232-srcblinking_ledh)
-- [2.3.3: `./src/blinking_led.c`](#233-srcblinking_ledc)
--->
-- [2.4: `Makefile`](#24-makefile)
-<!--
-- [2.4.1: Command to compile and run using `make`](#241-command-to-compile-and-run-using-make)
--->
-- [3: AVR Interrupts Cheat Sheet](#3-avr-interrupts-cheat-sheet)
-- [3.1: Enable Specific Interrupt](#31-enable-specific-interrupt)
-- [3.2: Configure Trigger Type](#32-configure-trigger-type)
-- [3.3: Enable Global Interrupts](#33-enable-global-interrupts)
-- [3.4: Write ISR](#34-write-isr)
-- [3.5: Common Interrupt Vectors](#35-common-interrupt-vectors)
-- [3.6: Important Registers](#36-important-registers)
-- [3.7: Timer Overflow](#37-timer-overflow)
-<!--
-- [3.7.1: Example (Timer1 - 16-bit)](#371-example-timer1---16-bit)
-- [3.7.2: Best Practices](#372-best-practices)
--->
-- [3.8: Timer Overflow Calculation for 500ms Using Timer1](#38-timer-overflow-calculation-for-500ms-using-timer1)
-<!--
-- [3.8.1: Understand Timer Tick Time](#381-understand-timer-tick-time)
-- [3.8.2: Calculate Ticks Needed for 500 ms](#382-calculate-ticks-needed-for-500-ms)
-- [3.8.3: Preload `TCNT1` to Reach Overflow at 7813 Ticks](#383-preload-tcnt1-to-reach-overflow-at-7813-ticks)
-- [3.8.4: We can re-write it in another way](#384-we-can-re-write-it-in-another-way)
--->
-- [4: UART Communication Tutorial (AVR / ATmega328P)](#4-uart-communication-tutorial-avr--atmega328p)
-- [4.1: What is UART?](#41-what-is-uart)
-- [4.2: Registers Involved in UART (ATmega328P)](#42-registers-involved-in-uart-atmega328p)
-<!--
-- [4.2.1: `UBRR0H` and `UBRR0L` - Baud Rate Registers](#421-ubrr0h-and-ubrr0l---baud-rate-registers)
-- [4.2.2: `UCSR0A` - Control and Status Register A](#422-ucsr0a---control-and-status-register-a)
-- [4.2.3: `UCSR0B` - Control and Status Register B](#423-ucsr0b---control-and-status-register-b)
-- [4.2.4: `UCSR0C` - Control and Status Register C](#424-ucsr0c---control-and-status-register-c)
-- [4.2.5: UDR0 - UART Data Register](#425-udr0---uart-data-register)
--->
-- [4.3: Full Example: Echo Program](#43-full-example-echo-program)
-- [4.4: Test UART with PC using `screen`](#44-test-uart-with-pc-using-screen)
-<!--
-- [4.4.1: Install `screen`](#441-install-screen)
-- [4.4.2: Create a Named Screen Session for `/dev/ttyACM0`](#442-create-a-named-screen-session-for-devttyacm0)
-- [4.4.3: List Screen Sessions](#443-list-screen-sessions)
-- [4.4.4: Close a Screen Session](#444-close-a-screen-session)
+        - [4.4.1 Install `screen`](#441-install-screen)
+        - [4.4.2 Create a Named Screen Session for `/dev/ttyACM0`](#442-create-a-named-screen-session-for-devttyacm0)
+        - [4.4.3 List Screen Sessions](#443-list-screen-sessions)
+        - [4.4.4 Close a Screen Session](#444-close-a-screen-session)
 -->
 
 ---
 
-## 1: Install AVR and Run Embedded C Program
+## 1 Install AVR and Run Embedded C Program
 <!-- ## Part 1: Simulate ATmega328P Code on Ubuntu (Using `simavr`) -->
 
-### 1.1: Install AVR
+### 1.1 Install AVR
 ```bash
 sudo apt update
 sudo apt install gcc-avr avr-libc binutils-avr avrdude #Install avr toolchains
@@ -79,8 +79,8 @@ avr-gcc --version
 
 ---
 
-### 1.2: Write an Embedded C Program and run it
-#### 1.2.1: Embedded C Program `blink.c`
+### 1.2 Write an Embedded C Program and run it
+#### 1.2.1 Embedded C Program `blink.c`
 ```c
 /* Blinking LED */
 
@@ -97,19 +97,19 @@ int main(void) {
 }
 ```
 
-#### 1.2.2: Compile `blink.c` to run on ATmega328P
+#### 1.2.2 Compile `blink.c` to run on ATmega328P
 ```bash
 avr-gcc -mmcu=atmega328p -DF_CPU=16000000UL -Os -o blink.elf blink.c
 ```
 
-#### 1.2.3: Run with `simavr` simulator
+#### 1.2.3 Run with `simavr` simulator
 ```bash
 simavr -m atmega328p -f 16000000 blink.elf
 ```
 
 ---
 <!--
-### Step 3: Optional - Print via UART in Simulation
+### Step 3 Optional - Print via UART in Simulation
 
 ```c
 #include <avr/io.h>
@@ -144,7 +144,7 @@ int main(void) {
 ---
 -->
 
-#### 1.2.4: Run on (Flash to) ATmega328P (Arduino Uno)
+#### 1.2.4 Run on (Flash to) ATmega328P (Arduino Uno)
 ```bash
 avr-objcopy -O ihex blink.elf blink.hex #Convert ELF to HEX
 avrdude -c arduino -p m328p -P /dev/ttyUSB0 -b 115200 -U flash:w:blink.hex #Upload to Arduino Uno
@@ -173,11 +173,11 @@ ls /dev/ttyACM*
 ---
 
 -->
-## 2: Create your own library
-### 2.1: Project Description: Blinking LED with Button - AVR (ATmega328P / Arduino Uno)
+## 2 Create your own library
+### 2.1 Project Description: Blinking LED with Button - AVR (ATmega328P / Arduino Uno)
 This project demonstrates a basic embedded C application on an AVR microcontroller using `avr-gcc`.
 It toggles an LED connected to digital pin `D2` when a button connected to digital pin `D3` is pressed.
-### 2.2: Project Structure
+### 2.2 Project Structure
 ```bash
 ├── main.c                   # Entry point of the program
 └── src/
@@ -185,8 +185,8 @@ It toggles an LED connected to digital pin `D2` when a button connected to digit
     └── blinking_led.h       # Header file with function declarations
 ```
 
-### 2.3: Code:
-#### 2.3.1: `main.c`
+### 2.3 Code:
+#### 2.3.1 `main.c`
 ```c
 /* main.c */
 /* Blinking LED */
@@ -197,7 +197,7 @@ int main(){
 	blinking_led_main();
 }
 ```
-#### 2.3.2: `./src/blinking_led.h`
+#### 2.3.2 `./src/blinking_led.h`
 ```c
 /* blinking_led.h */
 /* Blinking LED */
@@ -216,7 +216,7 @@ void blinking_led_main();
 
 #endif
 ```
-#### 2.3.3: `./src/blinking_led.c`
+#### 2.3.3 `./src/blinking_led.c`
 ```c
 /* blinking_led.c */
 /* Blinking LED */
@@ -260,7 +260,7 @@ void blinking_led_main(void) {
 	}
 }
 ```
-### 2.4: `Makefile`
+### 2.4 `Makefile`
 ```bash
 ## Makefile ##
 
@@ -303,7 +303,7 @@ clean:
 	rm -f *.elf *.hex
 ```
 
-#### 2.4.1: Command to compile and run using `make`
+#### 2.4.1 Command to compile and run using `make`
 ```bash
 make #Compile the Embedded C Program 
 make flash #Run on Arduino
@@ -314,13 +314,13 @@ make simulate #Run on simavr simulator
 ---
 
 
-## 3: AVR Interrupts Cheat Sheet
-### 3.1: Enable Specific Interrupt
+## 3 AVR Interrupts Cheat Sheet
+### 3.1 Enable Specific Interrupt
 Set the appropriate bit in a control register:
 - External: `EIMSK |= (1 << INT0);`
 - Timer: `TIMSK1 |= (1 << TOIE1);` // Timer1 overflow
 
-### 3.2: Configure Trigger Type
+### 3.2 Configure Trigger Type
 For external interrupts (`INT0`, `INT1`):
 ```c
 EICRA |= (1 << ISC01);  // Falling edge on INT0
@@ -334,13 +334,13 @@ EICRA |= (1 << ISC01);  // Falling edge on INT0
 
 ---
 
-### 3.3: Enable Global Interrupts
+### 3.3 Enable Global Interrupts
 ```c
 sei();   // Set Global Interrupt Enable bit
 cli();   // Clear (disable) if needed
 ```
 
-### 3.4: Write ISR
+### 3.4 Write ISR
 ```c
 ISR(INT0_vect) {
     // Your interrupt code
@@ -349,7 +349,7 @@ ISR(INT0_vect) {
 - `ISR` names must match vector name (e.g., `INT0_vect`, `TIMER1_OVF_vect`).
 - Keep `ISR` short and fast.
 
-### 3.5: Common Interrupt Vectors
+### 3.5 Common Interrupt Vectors
 |Vector Name        |Trigger Event              |
 |---                |---                        |
 |`INT0_vect`        |External `INT0` (PD2)      |
@@ -362,7 +362,7 @@ ISR(INT0_vect) {
 
 ---
 
-### 3.6: Important Registers
+### 3.6 Important Registers
 |Register   |Description                                    |
 |---        |---                                            |
 |`EIMSK`    |Enable `INT0`, `INT1`                          |
@@ -374,8 +374,8 @@ ISR(INT0_vect) {
 
 ---
 
-### 3.7: Timer Overflow
-#### 3.7.1: Example (Timer1 - 16-bit)
+### 3.7 Timer Overflow
+#### 3.7.1 Example (Timer1 - 16-bit)
 ```c
 /* Blinking LED using Timer Interrupt */
 /* blinking_led_timer_interrupt.c */
@@ -410,7 +410,7 @@ void main(void){
 	}
 }
 ```
-#### 3.7.2: Best Practices
+#### 3.7.2 Best Practices
 - Use `volatile` keyword for variables shared between ISR and main code:
 ```c
 volatile uint8_t flag = 0;
@@ -420,7 +420,7 @@ volatile uint8_t flag = 0;
 
 ---
 
-### 3.8: Timer Overflow Calculation for 500ms Using Timer1
+### 3.8 Timer Overflow Calculation for 500ms Using Timer1
 **Hardware Specifications Assumed:** <br>
 Microcontroller: **ATmega328P** <br>
 System Clock: **16 MHz** <br>
@@ -430,7 +430,7 @@ Goal: Overflow every **500 ms**
 
 ---
 
-#### 3.8.1: Understand Timer Tick Time
+#### 3.8.1 Understand Timer Tick Time
 When you use a **prescaler**, each timer tick takes more time.
 - **Prescaler** = `1024`  
 - **CPU Frequency (F_CPU)** = `16,000,000 Hz`
@@ -438,13 +438,13 @@ When you use a **prescaler**, each timer tick takes more time.
 Tick Time = Prescaler / F_CPU = 1024 / 16,000,000 = 64 μs
 ```
 
-#### 3.8.2: Calculate Ticks Needed for 500 ms
+#### 3.8.2 Calculate Ticks Needed for 500 ms
 ```ini
 500 ms = 500,000μs
 Ticks needed = 500,000/64 = 7812.5 ≈ 7813
 ```
 
-#### 3.8.3: Preload `TCNT1` to Reach Overflow at 7813 Ticks
+#### 3.8.3 Preload `TCNT1` to Reach Overflow at 7813 Ticks
 Since `Timer1` overflows at 65536 ticks, you must preload it to:
 ```ini
 65536 - 7813 = 57723
@@ -455,7 +455,7 @@ TCNT1 = 57723;
 ```
 This means the timer will count from 57723 to 65535, which is exactly 7813 ticks = **500 ms**.
 
-#### 3.8.4: We can re-write it in another way
+#### 3.8.4 We can re-write it in another way
 ```ini
 500 ms = {(2^16 - TCNT1) * 1024} / 16,000,000
 => 0.5 = {(65536 - TCNT1) * 1024} / 16,000,000
@@ -464,14 +464,14 @@ This means the timer will count from 57723 to 65535, which is exactly 7813 ticks
 ```
 
 ## 4: UART Communication Tutorial (AVR / ATmega328P)
-### 4.1: What is UART?
+### 4.1 What is UART?
 **UART (Universal Asynchronous Receiver/Transmitter)** is a hardware-based serial communication protocol that allows two devices to exchange data one bit at a time over a single line (TX for transmit, RX for receive), without requiring a clock signal.
 
 ---
 
-### 4.2: Registers Involved in UART (ATmega328P)
+### 4.2 Registers Involved in UART (ATmega328P)
 Here’s a breakdown of the most relevant **UART registers** and their key **bit fields**.
-#### 4.2.1: `UBRR0H` and `UBRR0L` - Baud Rate Registers
+#### 4.2.1 `UBRR0H` and `UBRR0L` - Baud Rate Registers
 These two registers form a 16-bit value used to set the **baud rate.**
 - Formula:
 	```ini
@@ -484,7 +484,7 @@ These two registers form a 16-bit value used to set the **baud rate.**
 - High byte: `UBRR0H = (UBRR >> 8)`
 - Low byte: `UBRR0L = UBRR`
 
-#### 4.2.2: `UCSR0A` - Control and Status Register A
+#### 4.2.2 `UCSR0A` - Control and Status Register A
 |Bit    |Name   |Description                                    |
 |---    |---    |---                                            |
 |7      |`RXC0` |Receive Complete (1 when data is ready to read)|
@@ -499,7 +499,7 @@ These two registers form a 16-bit value used to set the **baud rate.**
 while (!(UCSR0A & (1 << UDRE0))); // Wait until buffer is empty
 ```
 
-#### 4.2.3: `UCSR0B` - Control and Status Register B
+#### 4.2.3 `UCSR0B` - Control and Status Register B
 |Bit|Name       |Description                            |
 |---|---        |---                                    |
 |7  |`RXCIE0`   |RX Complete Interrupt Enable           |
@@ -517,7 +517,7 @@ while (!(UCSR0A & (1 << UDRE0))); // Wait until buffer is empty
 UCSR0B = (1 << RXEN0) | (1 << TXEN0); // Enable RX and TX
 ```
 
-#### 4.2.4: `UCSR0C` - Control and Status Register C
+#### 4.2.4 `UCSR0C` - Control and Status Register C
 |Bits   |Name           |Description                                |
 |---    |---            |---                                        |
 |7 - 6  |`UMSEL0[1:0]`  |Mode Select (00 for async)                 | 
@@ -532,12 +532,12 @@ UCSR0B = (1 << RXEN0) | (1 << TXEN0); // Enable RX and TX
 UCSR0C = (1 << UCSZ01) | (1 << UCSZ00); // 8-bit data, 1 stop bit
 ```
 
-#### 4.2.5: UDR0 - UART Data Register
+#### 4.2.5 UDR0 - UART Data Register
 - Used to **transmit** and **receive** one byte of data.
 - When writing: sends data.
 - When reading: receives data.
 
-### 4.3: Full Example: Echo Program
+### 4.3 Full Example: Echo Program
 ```c
 #include <avr/io.h>
 
@@ -572,8 +572,8 @@ int main(void) {
 }
 ```
 
-### 4.4: Test UART with PC using `screen`
-#### 4.4.1: Install `screen`
+### 4.4 Test UART with PC using `screen`
+#### 4.4.1 Install `screen`
 ```bash
 sudo apt install screen 
 ```
@@ -587,7 +587,7 @@ minicom -b 9600 -D /dev/ttyACM0
 Use Arduino Serial Monitor with 9600 baud to see echo behavior.
 -->
 
-#### 4.4.2: Create a Named Screen Session for `/dev/ttyACM0`
+#### 4.4.2 Create a Named Screen Session for `/dev/ttyACM0`
 ```bash
 screen -S arduino /dev/ttyACM0 9600
 ```
@@ -595,7 +595,7 @@ screen -S arduino /dev/ttyACM0 9600
 - `/dev/ttyACM0` - your Arduino's serial port.
 - `9600` - the baud rate (must match the one in your Arduino sketch).
 
-#### 4.4.3: List Screen Sessions
+#### 4.4.3 List Screen Sessions
 ```bash
 screen -ls
 ```
@@ -610,7 +610,7 @@ There is a screen on:
 screen -r arduino
 ```
 -->
-#### 4.4.4: Close a Screen Session
+#### 4.4.4 Close a Screen Session
 ```bash
 screen -X -S 7932.arduino quit
 ```
