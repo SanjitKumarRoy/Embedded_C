@@ -54,12 +54,29 @@
         -->
     - [4.3 Full Example: Echo Program](#43-full-example-echo-program)
     - [4.4 Test UART with PC using `screen`](#44-test-uart-with-pc-using-screen)
-<!--
+        <!--
         - [4.4.1 Install `screen`](#441-install-screen)
         - [4.4.2 Create a Named Screen Session for `/dev/ttyACM0`](#442-create-a-named-screen-session-for-devttyacm0)
         - [4.4.3 List Screen Sessions](#443-list-screen-sessions)
         - [4.4.4 Close a Screen Session](#444-close-a-screen-session)
--->
+        -->
+
+- [5 Analog to Digital Converter (ADC) on AVR](#5-analog-to-digital-converter-adc-on-avr)
+    - [5.1 ADC Registers and Their Fields](#51-adc-registers-and-their-fields)
+        <!--
+        - [5.1.1 ADMUX (ADC Multiplexer Selection Register)](#511-admux-adc-multiplexer-selection-register)
+        - [5.1.2 ADCSRA (ADC Control and Status Register A)](#512-adcsra-adc-control-and-status-register-a)
+        -->
+    - [5.2 ADC Basic Program](#52-adc-basic-program)
+        <!--
+        - [5.2.1 Initialization](#521-initialization)
+        - [5.2.2 Reading a Pin](#522-reading-a-pin)
+        - [5.2.3 Voltage Calculation](#523-voltage-calculation)
+        - [5.2.4 Example Use Case](#524-example-use-case)
+        -->
+    - [5.3 ADC Clock and Prescaler Notes](#53-adc-clock-and-prescaler-notes)
+    - [5.4 Important Notes](#54-important-notes)
+    - [5.5 Working Principle Recap](#55-working-principle-recap)
 
 ---
 
@@ -108,41 +125,6 @@ simavr -m atmega328p -f 16000000 blink.elf
 ```
 
 ---
-<!--
-### Step 3 Optional - Print via UART in Simulation
-
-```c
-#include <avr/io.h>
-#include <util/delay.h>
-
-void uart_init(void) {
-    UBRR0L = 103; // 9600 baud @ 16MHz
-    UCSR0B = (1 << TXEN0);
-    UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
-}
-
-void uart_send(char c) {
-    while (!(UCSR0A & (1 << UDRE0)));
-    UDR0 = c;
-}
-
-void uart_print(const char* s) {
-    while (*s) {
-        uart_send(*s++);
-    }
-}
-
-int main(void) {
-    uart_init();
-    while (1) {
-        uart_print("LED Toggle\n");
-        _delay_ms(1000);
-    }
-}
-```
-
----
--->
 
 #### 1.2.4 Run on (Flash to) ATmega328P (Arduino Uno)
 ```bash
@@ -159,20 +141,6 @@ ls /dev/ttyACM*
 ```
 ---
 
-<!--
-## Notes
-
-- The Arduino Uno uses the ATmega328P running at 16 MHz.
-- Add your user to the `dialout` group to avoid permission issues:
-  ```bash
-  sudo usermod -aG dialout $USER
-  ```
-- Use `-Os` to optimize for code size, which is important in embedded systems.
-- `simavr` is great for logic-level testing but may not perfectly emulate real-world peripherals.
-
----
-
--->
 ## 2 Create your own library
 ### 2.1 Project Description: Blinking LED with Button - AVR (ATmega328P / Arduino Uno)
 This project demonstrates a basic embedded C application on an AVR microcontroller using `avr-gcc`.
@@ -463,7 +431,7 @@ This means the timer will count from 57723 to 65535, which is exactly 7813 ticks
 => TCNT1 = 65536 - 7813 = 57723
 ```
 
-## 4: UART Communication Tutorial (AVR / ATmega328P)
+## 4 UART Communication Tutorial (AVR / ATmega328P)
 ### 4.1 What is UART?
 **UART (Universal Asynchronous Receiver/Transmitter)** is a hardware-based serial communication protocol that allows two devices to exchange data one bit at a time over a single line (TX for transmit, RX for receive), without requiring a clock signal.
 
@@ -612,7 +580,7 @@ screen -r arduino
 -->
 #### 4.4.4 Close a Screen Session
 ```bash
-screen -X -S 7932.arduino quit
+screen -X -S 12345.arduino quit
 ```
 ---
 
@@ -627,4 +595,309 @@ screen -X -S 7932.arduino quit
 |`UCSR0C  ` |Frame settings     | 
 |`UDR0	  ` |Send/receive byte  | 
 ---
+-->
+
+
+## 5 Analog to Digital Converter (ADC) on AVR
+An ADC (Analog-to-Digital Converter) is an electronic component (or part of a microcontroller) that converts analog voltage signals (continuous) into digital values (discrete numbers) that a computer or microcontroller can understand and process.
+It is used to read analog sensors (e.g., temperature, light, potentiometers, etc.).
+
+In the Context of AVR (e.g., ATmega328P):
+- The ADC takes an input voltage (typically between 0V and a reference voltage like 5V) and converts it into a 10-bit digital value.
+- This value ranges from 0 (for 0V) to 1023 (for V<sub>REF</sub>), because 2¹⁰ = 1024 possible values.
+
+**Example:**
+If V<sub>REF</sub> is 5V:
+- 0 V input → ADC value = 0
+- 2.5 V input → ADC value ≈ 512
+- 5.0 V input → ADC value = 1023
+
+### 5.1 ADC Registers and Their Fields
+|Register   |Fields	        |Description                         | 
+|---        |---            |---                                 |  
+|ADMUX	    |REFS1, REFS0	|Reference voltage selection         | 
+|	        |ADLAR          |Left Adjust Result (for 8-bit reads)| 
+|	        |MUX3..0	    |Select ADC input pin (ADC0 - ADC7)  | 
+|ADCSRA	    |ADEN	        |ADC Enable                          | 
+|	        |ADSC	        |Start Conversion                    | 
+|	        |ADATE	        |Auto Trigger Enable                 | 
+|	        |ADIF	        |Interrupt Flag                      | 
+|	        |ADIE	        |Interrupt Enable                    | 
+|	        |ADPS2..0	    |Prescaler Select bits               | 
+|ADCH/ADCL	|10-bit result	|ADC data (high/low bytes)           | 
+
+---
+#### 5.1.1 ADMUX (ADC Multiplexer Selection Register)
+**Purpose:**
+Configures input pin, reference voltage, and result format (left/right adjustment).
+
+**Bit-wise Breakdown:**
+|Bit(s) |Name	|Function                          | 
+|---    |---    |---                               |
+|7      |REFS1	|Reference Selection Bit 1         | 
+|6      |REFS0	|Reference Selection Bit 0         | 
+|5      |ADLAR	|ADC Left Adjust Result            | 
+|3:0	|MUX3:0	|Analog Channel and Gain Selection | 
+
+---
+
+**Reference Voltage Selection (REFS1:0):**<br>
+These bits select the voltage against which the input voltage is measured (V<sub>REF</sub>):
+
+|REFS1	|REFS0	|Reference              |
+|---    |---    |---                    |
+|0	    |0	    |AREF pin (external)    |
+|0	    |1	    |AVcc (typically 5V)    |
+|1	    |0	    |Reserved               |
+|1	    |1	    |Internal 1.1V reference|
+
+---
+**Most common:**<br>
+`(1 << REFS0)` → use AVcc (5V)
+
+**Channel Selection (MUX3:0)**<br>
+The MUX3:0 bits in the `ADMUX` register select which analog input pin (ADC0 - ADC7) to read from.
+
+**MUX3..0 → Input Pin**
+
+|MUX3..0|Input Pin	        |Pin  |    
+|---    |---                |---  |
+|`0000` |ADC0	            |PC0  |
+|`0001` |ADC1	            |PC1  |
+|`0010` |ADC2	            |PC2  |
+|`0011` |ADC3	            |PC3  |
+|`0100` |ADC4	            |PC4  |
+|`0101` |ADC5	            |PC5  |
+|`0110` |ADC6 (if available)|     | 
+|`0111` |ADC7 (if available)|     | 
+
+---
+On ATmega328P, ADC6 and ADC7 are only available in TQFP or QFN packages (not on DIP packages like Arduino Uno).
+
+**To set the pin:**
+```c
+ADMUX = (ADMUX & 0xF0) | (pin & 0x0F);
+```
+**This:**
+- Preserves the upper bits (REFS and ADLAR)
+- Sets the lower 4 bits to select the ADC input
+
+
+
+#### 5.1.2 ADCSRA (ADC Control and Status Register A)
+**Purpose:** <br>
+Starts conversions, sets prescaler, enables ADC, and handles interrupt behavior.
+
+**Bit-wise Breakdown:**
+
+|Bit(s)	|Name	    |Function                       |
+|---    |---        |---                            |
+|7	    |ADEN	    |ADC Enable                     | 
+|6	    |ADSC	    |Start Conversion               |
+|5	    |ADATE	    |Auto Trigger Enable            |
+|4	    |ADIF	    |Interrupt Flag                 |
+|3	    |ADIE	    |Interrupt Enable               |
+|2 - 0	|ADPS2:0    |ADC Prescaler (clock divider)  |
+
+---
+
+**Enable ADC (ADEN):**
+```c
+ADCSRA |= (1 << ADEN);  // Turn on ADC hardware
+```
+
+**Start Conversion (ADSC):**
+```c
+ADCSRA |= (1 << ADSC);  // Starts a new conversion
+```
+`ADSC` remains 1 while conversion is running.
+It becomes 0 when done.
+
+### 5.2 ADC Basic Program 
+#### 5.2.1 Initialization
+```c
+void adc_init(){
+	ADMUX = (1 << REFS0);	// Use AVcc (5V) as voltage reference
+	ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1); // Enable ADC with prescaler 64
+}
+```
+
+**Explanation:**
+```ini
+REFS0 = 1 → VREF = AVcc
+ADEN = 1 → Enable ADC
+Prescaler = 64 → ADC clock = F_CPU/64 = 250 kHz (within recommended range)
+```
+
+#### 5.2.2 Reading a Pin 
+```c
+uint16_t adc_read(uint8_t pin) {
+    ADMUX = (ADMUX & 0xF0) | (pin & 0x0F);  // Select ADC pin
+    ADCSRA |= (1 << ADSC);                  // Start conversion
+    while (ADCSRA & (1 << ADSC));           // Wait for conversion to complete
+    return ADC;                             // Read 10-bit result from ADCL/ADCH
+}
+```
+
+#### 5.2.3 Voltage Calculation
+```c
+#define VREF 5.0  // Reference voltage (AVcc)
+
+float get_voltage(uint8_t pin) {
+    uint16_t result = adc_read(pin);    // Get ADC value
+    return (result * VREF) / 1023.0;    // Convert ADC value to voltage
+}
+```
+
+#### 5.2.4 Example Use Case
+ Read Pin `A0` and Control LED
+```c
+int main(void) {
+    DDRD |= (1 << PD3);  // Set PD3 as output (LED)
+    adc_init();
+
+    while (1) {
+        float voltage = get_voltage(PC0);  // Pin A0
+        if (voltage > 2.5) {
+            PORTD |= (1 << PD3);  // LED ON
+        } else {
+            PORTD &= ~(1 << PD3); // LED OFF
+        }
+    }
+}
+```
+
+### 5.3 ADC Clock and Prescaler Notes
+To ensure accurate results, the ADC clock should be between 50 kHz and 200 kHz:
+
+|Prescaler	|ADC Clock @ 16MHz|Accepted?|
+|---        |---              |---      |
+|2	        |8 MHz (too fast) |&#10008; |    
+|4	        |4 MHz            |&#10008; |  
+|8	        |2 MHz            |&#10008; |  
+|16	        |1 MHz            |&#10008; |  
+|32	        |500 kHz          |&#10008; |  
+|64	        |250 kHz          |&#10004; |
+|128        |125 kHz          |&#10004; | 
+
+---
+Use `ADPS2:0` in `ADCSRA` to set prescaler.
+
+### 5.4 Important Notes
+- ADC result is in ADCL and ADCH (read ADCL first!).
+- ADC input voltage must not exceed V<sub>REF</sub>.
+- Floating ADC pins can cause unstable readings.
+- Use AVcc (5V) or internal 1.1V reference if available.
+
+
+### 5.5 Working Principle Recap:
+- Configure `ADMUX` to select reference voltage and input channel.
+- Enable the **ADC** using **ADEN** in `ADCSRA`.
+- Start a conversion using **ADSC**.
+- Wait until **ADSC** becomes 0.
+- Read 10-bit result from **ADC** (combined **ADCL** & **ADCH**).
+- Optionally use interrupts or auto-triggering for continuous conversions.
+
+---
+
+
+
+
+<!--
+## 6 Project: LED Brightness Control Using Sensor Input
+#### 6.1 Objective:
+Control the brightness of an LED connected to a PWM pin based on an analog sensor reading (e.g., from a potentiometer or photoresistor). The sensor input is read by the ADC and mapped to PWM duty cycle.
+Components Needed
+
+- AVR microcontroller (ATmega328P or Arduino Uno)
+- LED with current limiting resistor (~220Ω)
+- Analog sensor (potentiometer or photoresistor)
+- Breadboard and jumper wires
+- Power supply (5V)
+
+#### 6.2 Concept
+- Read analog sensor voltage (0-5V) via ADC (10-bit resolution: 0–1023).
+- Map ADC value to PWM duty cycle (0–255 for 8-bit PWM).
+- Output PWM signal to LED pin to control brightness.
+
+#### 6.2 Code Overview (in Embedded C)
+```c
+#include <avr/io.h>
+#include <util/delay.h>
+
+#define F_CPU 16000000UL
+
+void adc_init() {
+    ADMUX = (1 << REFS0); // AVcc reference, ADC0 channel
+    ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0); // Enable ADC, prescaler=128
+}
+
+uint16_t adc_read(uint8_t channel) {
+    ADMUX = (ADMUX & 0xF0) | (channel & 0x0F); // select ADC channel
+    ADCSRA |= (1 << ADSC); // start conversion
+    while (ADCSRA & (1 << ADSC)); // wait until done
+    return ADC;
+}
+
+void pwm_init() {
+    // Set Fast PWM mode, non-inverting, prescaler=64, OC0A (Pin PD6) as output
+    DDRD |= (1 << PD6);  // PD6 as output (OC0A)
+    TCCR0A = (1 << COM0A1) | (1 << WGM01) | (1 << WGM00); // Fast PWM, clear OC0A on compare match
+    TCCR0B = (1 << CS01) | (1 << CS00); // prescaler = 64
+}
+
+void set_pwm_duty(uint8_t duty) {
+    OCR0A = duty; // Set duty cycle (0-255)
+}
+
+int main(void) {
+    adc_init();
+    pwm_init();
+
+    while (1) {
+        uint16_t sensor_val = adc_read(0); // read ADC0 (analog pin 0)
+        uint8_t duty = sensor_val / 4; // map 0-1023 to 0-255
+        set_pwm_duty(duty);
+        _delay_ms(10);
+    }
+}
+```
+
+Explanation
+
+    ADC Setup:
+
+        Uses AVcc as voltage reference.
+
+        ADC clock prescaler 128 for proper conversion speed.
+
+        Reads analog input on channel 0.
+
+    PWM Setup:
+
+        Uses Timer0 Fast PWM on OC0A (Pin PD6 / Arduino pin 6).
+
+        Non-inverting mode for LED brightness control.
+
+        8-bit PWM, duty cycle set by OCR0A register.
+
+    Control Logic:
+
+        Sensor ADC value (0-1023) converted to PWM duty (0-255).
+
+        PWM duty changes LED brightness proportionally.
+
+Wiring
+Microcontroller Pin	Component
+ADC0 (PC0 / A0)	Analog sensor (potentiometer middle pin)
+PD6 (OC0A / Arduino D6)	LED + resistor to GND
+Extensions / Improvements
+
+    Use interrupts for ADC conversion completion.
+
+    Implement smoothing/filtering on ADC input.
+
+    Use multiple sensors for multi-LED brightness control.
+
+    Use UART to send sensor and PWM data for monitoring.
 -->
