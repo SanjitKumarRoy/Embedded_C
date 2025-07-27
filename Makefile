@@ -5,9 +5,14 @@ MCU = atmega328p
 F_CPU = 16000000UL
 
 # Source and output names
-SRC = main.c src/uart_basic.c
+#SRC = main.c src/uart_basic.c
 #SRC = blinking_led.c
 #SRC = blink_uart_simulation.c
+#SRC = read_pin_voltage.c
+#SRC = main.c src/uart.c
+#SRC = main.c src/adc.c src/uart.c
+#SRC = main.c src/led_brightness.c src/adc.c src/uart.c
+SRC = led_brightness.c src/adc.c src/uart.c
 TARGET = program
 
 # Compiler and flags

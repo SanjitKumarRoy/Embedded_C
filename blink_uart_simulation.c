@@ -1,6 +1,14 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
+void init_port(){
+	DDRD |= (1 << PD3);
+}
+
+void toggle_led(){
+	PORTD ^= (1 << PD3);  // Toggle PD2
+}
+
 void uart_init(void) {
     UBRR0L = 103; // 9600 baud @ 16MHz
     UCSR0B = (1 << TXEN0);
@@ -19,9 +27,16 @@ void uart_print(const char* s) {
 }
 
 int main() {
+	init_port();
     uart_init();
     while (1) {
-        uart_print("LED Toggle\n");
-        _delay_ms(1000);
+		toggle_led();
+		if(PORTD &= (1 << PD3)){
+			uart_print("LED ON\n");
+		}
+		else{
+			uart_print("LED OFF\n");
+		}
+        _delay_ms(2000);
     }
 }
